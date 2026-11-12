@@ -1,4 +1,4 @@
-from django.db.models import Q, TextField
+from django.db.models import Q, TextField, Prefetch
 from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -7,6 +7,9 @@ from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
+from apps.alumni.models import AlumniProfile
+from apps.recruiters.models import Company, CompanyAlumniEmployment
 from apps.applications.models import Application
 from apps.students.models import StudentProfile
 from apps.students.permissions import IsStudent
@@ -34,6 +37,19 @@ class OpportunityViewSet(viewsets.ReadOnlyModelViewSet):
                 application_deadline__gt=timezone.now(),
             )
             .select_related("company", "created_by")
+            .prefetch_related(
+                Prefetch(
+                    "company__alumni_employments",
+                    queryset=CompanyAlumniEmployment.objects.filter(
+                        company__verification_status=Company.VerificationStatus.VERIFIED,
+                        employment_status=CompanyAlumniEmployment.EmploymentStatus.CURRENT,
+                        verification_status=CompanyAlumniEmployment.VerificationStatus.VERIFIED,
+                        alumni__verification_status=AlumniProfile.VerificationStatus.VERIFIED,
+                        alumni__user__is_active=True,
+                    ).select_related("alumni", "alumni__user"),
+                    to_attr="verified_alumni_employments",
+                )
+            )
         )
 
         search = self.request.query_params.get("search", "").strip()
