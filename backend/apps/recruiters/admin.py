@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Company, RecruiterProfile, WorkflowAuditEvent
+from .models import Company, CompanyAlumniEmployment, RecruiterProfile, WorkflowAuditEvent
 
 
 @admin.register(Company)
@@ -35,3 +35,14 @@ class WorkflowAuditEventAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(CompanyAlumniEmployment)
+class CompanyAlumniEmploymentAdmin(admin.ModelAdmin):
+    list_display = (
+        "alumni", "company", "designation", "employment_status",
+        "verification_status", "verified_at",
+    )
+    list_filter = ("employment_status", "verification_status", "company")
+    search_fields = ("alumni__user__username", "alumni__user__email", "company__name")
+    readonly_fields = ("verified_by", "verified_at", "created_at", "updated_at")
