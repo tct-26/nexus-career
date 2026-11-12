@@ -1,10 +1,14 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.recruiters.models import Company
+from apps.recruiters.alumni_serializers import OpportunityCompanyAlumniSerializer
+
 from .models import Opportunity
 
 
 class OpportunitySerializer(serializers.ModelSerializer):
+    verified_company_alumni = serializers.SerializerMethodField()
     company_name = serializers.CharField(source="company.name", read_only=True)
     created_by_username = serializers.CharField(
         source="created_by.username",
@@ -14,7 +18,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Opportunity
         fields = [
-            "id", "title", "description", "company_name", "created_by_username",
+            "id", "title", "description", "company_name", "verified_company_alumni", "created_by_username",
             "opportunity_type", "required_skills", "eligibility_criteria",
             "work_mode", "location", "compensation", "application_deadline",
             "start_date", "application_method", "external_application_url",
@@ -22,6 +26,13 @@ class OpportunitySerializer(serializers.ModelSerializer):
             "created_at", "updated_at",
         ]
         read_only_fields = fields
+
+
+    def get_verified_company_alumni(self, obj):
+        if obj.company.verification_status != Company.VerificationStatus.VERIFIED:
+            return []
+        employments = getattr(obj.company, "verified_alumni_employments", [])
+        return OpportunityCompanyAlumniSerializer(employments, many=True).data
 
 
 class RecruiterOpportunitySerializer(serializers.ModelSerializer):
