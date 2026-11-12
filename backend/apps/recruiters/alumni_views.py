@@ -3,6 +3,7 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts.models import User
+from apps.alumni.models import AlumniProfile
 from .models import Company, CompanyAlumniEmployment
 from .alumni_serializers import CompanyAlumniEmploymentSerializer
 
@@ -27,9 +28,7 @@ class CompanyVerifiedAlumniListView(generics.ListAPIView):
                 company=company,
                 employment_status=CompanyAlumniEmployment.EmploymentStatus.CURRENT,
                 verification_status=CompanyAlumniEmployment.VerificationStatus.VERIFIED,
-                alumni__verification_status=(
-                    "VERIFIED"
-                ),
+                alumni__verification_status=AlumniProfile.VerificationStatus.VERIFIED,
             )
             .select_related("alumni", "alumni__user", "company")
             .order_by("alumni__user__last_name", "alumni__user__first_name", "id")
